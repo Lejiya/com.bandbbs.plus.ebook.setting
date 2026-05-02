@@ -1,0 +1,133 @@
+<template>
+  <div class="container">
+    <!-- 顶部标题区域 -->
+    <div class="header">
+      <text class="title">设备设置</text>
+    </div>
+    
+    <div class="content">
+      <!-- 菜单项 -->
+      <div class="menu-item" 
+           onclick="handleTimeSetting"
+           ontouchstart="onTimeStart"
+           ontouchend="onTimeEnd">
+        <text class="item-text">时间设置</text>
+      </div>
+      
+      <div class="menu-item" 
+           onclick="handleBrightnessSetting"
+           ontouchstart="onBrightnessStart"
+           ontouchend="onBrightnessEnd">
+        <text class="item-text">亮度设置</text>
+      </div>
+      
+      <div class="menu-item" 
+           onclick="handlePasswordSetting"
+           ontouchstart="onPasswordStart"
+           ontouchend="onPasswordEnd">
+        <text class="item-text">密码设置</text>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style>
+.container {
+  flex-direction: column;
+  background-color: #000000;
+  padding: 0 20px;
+  width: 100%;
+  height: 100%;
+}
+
+/* 头部区域 - 水平居中 */
+.header {
+  height: 100px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 22px;
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.content {
+  flex-direction: column;
+  flex: 1;
+}
+
+.menu-item {
+  background-color: #1c1c1e;
+  height: 100px;
+  border-radius: 32px;
+  margin-bottom: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+}
+
+/* 按压时的样式 */
+.menu-item-pressed {
+  background-color: #2c2c2e;
+}
+
+.item-text {
+  color: #f0f0f4;
+  font-size: 20px;
+  font-weight: 500;
+  text-align: center;
+  lines: 1;
+}
+</style>
+
+<script>
+import router from '@system.router'
+
+export default {
+  data() {
+    return {
+      timePressed: false,
+      brightnessPressed: false,
+      passwordPressed: false
+    }
+  },
+  
+  onTimeStart() {
+    this.timePressed = true
+  },
+  onTimeEnd() {
+    this.timePressed = false
+  },
+  
+  onBrightnessStart() {
+    this.brightnessPressed = true
+  },
+  onBrightnessEnd() {
+    this.brightnessPressed = false
+  },
+  
+  onPasswordStart() {
+    this.passwordPressed = true
+  },
+  onPasswordEnd() {
+    this.passwordPressed = false
+  },
+  
+  handleTimeSetting() {
+    router.push({ uri: '/pages/TimeSetting2' })
+  },
+  
+  handleBrightnessSetting() {
+    router.push({ uri: '/pages/BrightnessSetting' })
+  },
+  
+  handlePasswordSetting() {
+    router.push({ uri: '/pages/PasswordSetting' })
+  }
+}
+</script>

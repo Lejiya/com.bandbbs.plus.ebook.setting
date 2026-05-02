@@ -1,0 +1,92 @@
+<template>
+  <div class="container">
+    <div class="content">
+      <!-- 提示信息 -->
+      <div class="warning-box">
+        <text class="warning-line1">请连接手机后</text>
+        <text class="warning-line2">再尝试操作</text>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style>
+.container {
+  flex-direction: column;
+  background-color: #000000;
+  width: 100%;
+  height: 100%;
+}
+
+.content {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.warning-box {
+  /* 红底大小：刚好包裹文字，留出舒适边距 */
+  padding: 20px 32px;
+  /* 淡红色，不刺眼 */
+  background-color: #e54c4c;
+  /* 大弧度圆角，更舒服 */
+  border-radius: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.warning-line1 {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.warning-line2 {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* 圆形屏幕适配 */
+@media (round-screen: round) {
+  .warning-box {
+    padding: 18px 28px;
+    border-radius: 40px;
+  }
+  .warning-line1,
+  .warning-line2 {
+    font-size: 18px;
+  }
+}
+
+/* 小屏适配 */
+@media (max-height: 200px) {
+  .warning-box {
+    padding: 14px 24px;
+    border-radius: 36px;
+  }
+  .warning-line1,
+  .warning-line2 {
+    font-size: 16px;
+  }
+  .warning-line2 {
+    margin-top: 4px;
+  }
+}
+</style>
+
+<script>
+export default {
+  data() {
+    return {}
+  },
+  onInit() {
+    console.log('提示页面已加载')
+  }
+}
+</script>

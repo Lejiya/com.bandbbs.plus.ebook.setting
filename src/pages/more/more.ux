@@ -1,0 +1,245 @@
+<template>
+	<div class="page" style="flex-direction: column;">
+  
+	<list class="list">
+		<list-item class="item" @click="routerTo('readingSetting')" type="item">
+			<div class="item-content">
+				<text class="itemtext" static>阅读设置</text>
+				<text class="itemtext2" static>字体大小相关</text>
+			</div>
+			<img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		</list-item>
+		<list-item class="item" @click="routerTo('performanceSetting')" type="item">
+			<div class="item-content">
+				<text class="itemtext" static>性能设置</text>
+				<text class="itemtext2" static>分段大小相关</text>
+			</div>
+			<img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		</list-item>
+		  <list-item class="item" @click="routerTo('shelfSetting')" type="item">
+			  <div class="item-content">
+				  <text class="itemtext" static>书架设置</text>
+				  <text class="itemtext2" static>书架样式相关</text>
+			  </div>
+			  <img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
+		  <list-item class="item" @click="routerTo('interactionSetting')" type="item">
+			  <div class="item-content">
+				  <text class="itemtext" static>交互设置</text>
+				  <text class="itemtext2" static>手势交互相关</text>
+			  </div>
+			  <img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
+	      <list-item class="item" @click="routerTo('storageManagement')" type="item">
+		  	  <div class="item-content">
+				<text class="itemtext" static>存储管理</text>
+				  <text class="itemtext2" static>管理存储空间</text>
+			  </div>
+			  <img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
+		  <list-item class="item" @click="routerTo('push')" type="item">
+			  <div class="item-content">
+				  <text class="itemtext" static>书籍同步</text>
+				  <text class="itemtext2" static>连接手机同步</text>
+			  </div>
+			  <img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
+		  <list-item class="item" @click="routerTo('readingTime')" type="item">
+			  <div class="item-content">
+				  <text class="itemtext" static>阅读时长</text>
+				  <text class="itemtext2" static>全局阅读时长</text>
+			  </div>
+			  <img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
+		  <list-item class="item" @click="routerTo('SetPassword')" type="item">
+			<div class="item-content">
+				<text class="itemtext" static>密码设置</text>
+				<text class="itemtext2" static>修改进入密码</text>
+			</div>
+			<img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
+		  <list-item class="item" @click="routerTo('about')" type="item">
+			  <div class="item-content">
+				  <text class="itemtext" static>关于</text>
+				  <text class="itemtext2" static>关于电子书</text>
+			  </div>
+			  <img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
+	  </list>
+  
+	  
+	  <img static src="/common/images/hd.png" style="position: absolute;left: 0px;top: 0px;width: 212px;height: 82px;" />
+	  <text style="position: absolute;top: 16px;width: 212px;line-height: 32px;font-weight:bold;font-size:18px;color:rgba(255,255,255,0.6);text-align:center;">
+		{{nowTime}}
+	  </text>
+	  <text static style="position: absolute;top: 36px;width: 212px;line-height: 42px;font-weight:bold;font-size:26px;color:white;text-align:center;">
+		  设置
+	  </text>
+	</div>
+  </template>
+  
+  <script>
+  import router from '@system.router'
+  import prompt from '@system.prompt'
+  import app from '@system.app'
+  import storage from '../../utils/storage.js'
+  
+  
+  export default {
+	private: {
+	  nowTime: "00:00",
+	  timer: null,
+	  showProgressBar: true,
+	  chapterSwitchStyle: 'button',
+    timeFormat: '24h'
+	},
+	protected: {
+	  cPath: '',
+		name: '',
+  
+	},
+	updateTime() {
+	  const date = new Date();
+	  let hours = date.getHours();
+	  let minutes = date.getMinutes();
+  
+    if (this.timeFormat === '12h') {
+        let ampm = hours >= 12 ? '下午' : '上午';
+        hours = hours % 12;
+        hours = hours ? hours : 12; 
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        this.nowTime = `${ampm} ${hours}:${minutes}`;
+    } else {
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        this.nowTime = `${hours}:${minutes}`;
+    }
+	},
+	onInit() {
+    storage.get({
+        key: 'EBOOK_TIME_FORMAT',
+        success: (data) => {
+            if (data) {
+                this.timeFormat = data;
+            }
+            this.updateTime();
+        },
+        fail: () => {
+            this.updateTime();
+        }
+    });
+	  this.timer = setInterval(() => {
+		this.updateTime();
+	  }, 1000);
+	},
+	loadSettings() {
+    storage.get({ key: 'EBOOK_TIME_FORMAT', success: (data) => {
+        if (data) this.timeFormat = data;
+    }});
+	},
+	onDestroy(){
+		if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+	},
+	onReady(){
+	},
+	resetList(){
+  
+	},
+	onShow(){
+		this.loadSettings();
+	},
+	clearBooks(){
+	  router.push({
+            uri: '/pages/help',
+            params: {
+                title: '清空数据',
+                content: '为防止卡死，请手动将小程序卸载后重新安装。'
+            }
+        });
+	},
+	onBackPress(){
+	},
+	selectFile(item){
+		router.push({
+		  uri: '/pages/detail'
+		})
+	},
+	routerTo(url) {
+	  router.push({
+		uri: '/pages/' + url
+	  })
+	},
+	back(){
+		router.back();
+	},
+	exit(){
+		app.terminate();
+	},
+	toggleProgressBar() {
+		this.showProgressBar = !this.showProgressBar;
+		storage.set({
+			key: 'EBOOK_SHOW_PROGRESS_BAR',
+			value: this.showProgressBar.toString(),
+			success: () => {
+				prompt.showToast({ message: this.showProgressBar ? '已开启章节进度条' : '已关闭章节进度条' });
+			}
+		});
+	}
+  }
+  </script>
+  
+  <style>
+.page {
+	width: 212px;
+	height: 520px;
+	background-color: #000000;
+}
+
+.list {
+	width: 212px;
+	height: 520px;
+	position: absolute;
+	top:0px;
+	left:0px;
+    padding: 86px 12px;
+}
+  
+  .item {
+	  width: 100%;
+	  height: 85px;
+	  padding: 12px 18px;
+	  margin-bottom: 8px;
+	  background-color: #262626;
+	  border-radius: 26px;
+	  align-items: center;
+	justify-content: space-between;
+  }
+  
+  .itemtext {
+	  font-size: 23px;
+	  width: 100%;
+	  font-weight: bold;
+	  color: white;
+	  text-overflow: ellipsis;
+	  lines: 1;
+  }
+  
+  .itemtext2 {
+	  font-size: 20px;
+	  font-weight: bold;
+	  color: rgba(255,255,255,0.6);
+	  text-overflow: ellipsis;
+	  lines: 1;
+  }
+  
+  
+  .item-content {
+	  height: 100%;
+	  flex:1;
+	  flex-direction: column;
+	  justify-content: space-between;
+  }
+  </style>

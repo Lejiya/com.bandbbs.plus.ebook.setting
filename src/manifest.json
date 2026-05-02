@@ -1,0 +1,192 @@
+{
+  "package": "com.bandbbs.ebook.plus",
+  "name": "高级设置",
+  "versionName": "V26.2.1.BAND10",
+  "versionCode": 260302,
+  "minPlatformVersion": 1100,
+  "icon": "/common/logo.png",
+  "simulationVersion": "default",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "features": [
+    {
+      "name": "system.router"
+    },
+    {
+      "name": "system.storage"
+    },
+    {
+      "name": "system.prompt"
+    },
+    {
+      "name": "system.file"
+    },
+    {
+      "name": "system.interconnect"
+    },
+    {
+      "name": "system.app"
+    },
+    {
+      "name": "system.brightness"
+    },
+    {
+      "name": "system.device"
+    },
+    {
+      "name": "system.vibrator"
+    },
+    {
+      "name": "system.battery"
+    }
+  ],
+  "config": {
+    "logLevel": "log",
+    "designWidth": 212
+  },
+  "router": {
+    "entry": "pages/SettingMenu",
+    "pages": {
+      "pages/SetPassword": {
+        "component": "SetPassword"
+      },
+      "pages/SettingMenu": {
+        "component": "SettingMenu"
+      },
+      "pages/TimeSetting2": {
+        "component": "TimeSetting2"
+      },
+      "pages/BrightnessSetting": {
+        "component": "BrightnessSetting"
+      },
+      "pages/PasswordSetting": {
+        "component": "PasswordSetting"
+      },
+      "pages/index": {
+        "component": "index",
+        "launchMode": "singleTask"
+      },
+      "pages/detail": {
+        "component": "detail"
+      },
+      "pages/detailsetting": {
+        "component": "detailsetting"
+      },
+      "pages/readPresent": {
+        "component": "readPresent"
+      },
+      "pages/readPercent": {
+        "component": "readPercent"
+      },
+      "pages/autoRead": {
+        "component": "autoRead"
+      },
+      "pages/opacity": {
+        "component": "opacity"
+      },
+      "pages/more": {
+        "component": "more"
+      },
+      "pages/about": {
+        "component": "about"
+      },
+      "pages/fontSetting": {
+        "component": "fontSetting"
+      },
+      "pages/marginSetting": {
+        "component": "marginSetting"
+      },
+      "pages/chapterSwitchSensitivity": {
+        "component": "chapterSwitchSensitivity"
+      },
+      "pages/push": {
+        "component": "push"
+      },
+      "pages/swipe": {
+        "component": "swipe"
+      },
+      "pages/bookmarks": {
+        "component": "bookmarks"
+      },
+      "pages/pageSizeSetting": {
+        "component": "pageSizeSetting"
+      },
+      "pages/bookinfo": {
+        "component": "bookinfo"
+      },
+      "pages/confirm": {
+        "component": "confirm"
+      },
+      "pages/editBookmark": {
+        "component": "editBookmark"
+      },
+      "pages/help": {
+        "component": "help"
+      },
+      "pages/screenBrightness": {
+        "component": "screenBrightness"
+      },
+      "pages/list": {
+        "component": "list"
+      },
+      "pages/textReader": {
+        "component": "textReader"
+      },
+      "pages/chapterSwitchSetting": {
+        "component": "chapterSwitchSetting"
+      },
+      "pages/chapterSwitchStyle": {
+        "component": "chapterSwitchStyle"
+      },
+      "pages/swipeSensitivity": {
+        "component": "swipeSensitivity"
+      },
+      "pages/autoReadDistanceSetting": {
+        "component": "autoReadDistanceSetting"
+      },
+      "pages/readingSetting": {
+        "component": "readingSetting"
+      },
+      "pages/shelfSetting": {
+        "component": "shelfSetting"
+      },
+      "pages/interactionSetting": {
+        "component": "interactionSetting"
+      },
+      "pages/performanceSetting": {
+        "component": "performanceSetting"
+      },
+      "pages/progressSavingSetting": {
+        "component": "progressSavingSetting"
+      },
+      "pages/timeSetting": {
+        "component": "timeSetting"
+      },
+      "pages/marqueeSetting": {
+        "component": "marqueeSetting"
+      },
+      "pages/readModeSetting": {
+        "component": "readModeSetting"
+      },
+      "pages/readingTime": {
+        "component": "readingTime"
+      },
+      "pages/storageManagement": {
+        "component": "storageManagement"
+      },
+      "pages/extraContentSetting": {
+        "component": "extraContentSetting"
+      },
+      "pages/search": {
+        "component": "search"
+      },
+      "pages/quickSettings": {
+        "component": "quickSettings"
+      }
+    }
+  },
+  "display": {
+    "backgroundColor": "#000000"
+  }
+}

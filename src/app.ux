@@ -1,0 +1,67 @@
+<script>
+import interconnfile from "./utils/interconnfile"
+import interconn from "./utils/handshake"
+import router from '@system.router'
+import brightness from '@system.brightness'
+import storage from './utils/storage.js'
+import file from '@system.file'
+globalThis.conn = new interconn();
+globalThis.conn.setHandshakeListener(() => {
+  router.push({uri: 'pages/push'})
+})
+globalThis.connfile = globalThis.conn.register(interconnfile);
+export default {
+    onInit() {
+        file.mkdir({
+            uri: 'internal://files/books/',
+            complete: function() {
+                file.mkdir({
+                    uri: 'internal://files/books/storage-api/'
+                });
+            }
+        });
+    },
+    onShow() {
+        // 检查是否已设置密码
+        storage.get({
+            key: 'EBOOK_PASSWORD',
+            success: (password) => {
+                if (!password) {
+                    // 未设置密码，跳转到设置密码页面
+                    router.replace({
+                        uri: '/pages/SetPassword'
+                    });
+                } else {
+                    // 已设置密码，继续正常流程
+                    this.checkBrightnessSetting();
+                }
+            }
+        });
+    },
+
+    checkBrightnessSetting() {
+        storage.get({
+            key: 'EBOOK_BRIGHTNESS_FOLLOW_SYSTEM',
+            success: (data) => {
+                if (data !== 'false') {
+                    return;
+                }
+                storage.get({
+                    key: 'EBOOK_BRIGHTNESS',
+                    success: (brightnessData) => {
+                        if (brightnessData) {
+                            const brightnessValue = parseInt(brightnessData);
+                            brightness.setMode({
+                                mode: 0
+                            });
+                            brightness.setValue({
+                                value: brightnessValue
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    }
+}
+</script>
