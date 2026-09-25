@@ -156,6 +156,13 @@ export default {
 		nextChapterName: '',
 		periodicSaveTimer: null,
 		readingTimeSaveTimer: null,
+		restIntervalEnabled: false,
+		restIntervalValue: 30,
+		maxDurationEnabled: false,
+		maxDurationValue: 60,
+		restIntervalTimer: null,
+		maxDurationTimer: null,
+		sessionStartTime: 0,
 		shortcutLongPressScreenOn: false,
 		shortcutDoubleClickBookmark: false,
 		shortcutTripleClickBookmarkManager: false,
@@ -211,6 +218,7 @@ export default {
 		global.runGC();
 	},
 	async onShow() {
+		this._registerExitHandler();
 		await this.loadSettings();
 		const settingsChanged = this.isInitialized && (this.lastTxtSizePage !== this.txtSizePage || this.lastFontSize !== this.fontSize);
 		if (typeof globalThis.isKeepScreenOn !== 'undefined' && this.isKeepScreenOn !== globalThis.isKeepScreenOn) {
@@ -251,6 +259,7 @@ export default {
 				else this.nextPage();
 			}, this.auto * 1000);
 		}
+		this._startRestTimers();
 	},
 	async loadSettings() {
 		const keys = [
@@ -262,7 +271,8 @@ export default {
 			'EBOOK_TEXT_READER_MARQUEE_ENABLED', 'EBOOK_DETAIL_PROGRESS_MARQUEE_ENABLED', 'EBOOK_NOSTALGIC_PAGE_TURN_MODE',
 			'EBOOK_BOLD_ENABLED', 'EBOOK_CHAPTER_START_EMPTY_LINES', 'EBOOK_CHAPTER_START_NUMBER', 'EBOOK_CHAPTER_START_NAME',
 			'EBOOK_CHAPTER_START_WORD_COUNT', 'EBOOK_CHAPTER_SWITCH_SHOW_INFO', 'EBOOK_SHORTCUT_LONG_PRESS_SCREEN_ON',
-			'EBOOK_SHORTCUT_DOUBLE_CLICK_BOOKMARK', 'EBOOK_SHORTCUT_TRIPLE_CLICK_BOOKMARK_MANAGER'
+			'EBOOK_SHORTCUT_DOUBLE_CLICK_BOOKMARK', 'EBOOK_SHORTCUT_TRIPLE_CLICK_BOOKMARK_MANAGER',
+			'EBOOK_REST_INTERVAL_ENABLED', 'EBOOK_REST_INTERVAL', 'EBOOK_MAX_DURATION_ENABLED', 'EBOOK_MAX_DURATION'
 		];
 		const defaults = {
 			'EBOOK_TXTSZPAGE': 400, 'EBOOK_VERTICAL_MARGIN': 20, 'EBOOK_FONT': 24, 'EBOOK_OPACITY': 100, 'EBOOK_SWIPE': 'column',
@@ -273,7 +283,8 @@ export default {
 			'EBOOK_TEXT_READER_MARQUEE_ENABLED': false, 'EBOOK_DETAIL_PROGRESS_MARQUEE_ENABLED': false, 'EBOOK_NOSTALGIC_PAGE_TURN_MODE': 'topBottomClick',
 			'EBOOK_BOLD_ENABLED': true, 'EBOOK_CHAPTER_START_EMPTY_LINES': false, 'EBOOK_CHAPTER_START_NUMBER': false, 'EBOOK_CHAPTER_START_NAME': false,
 			'EBOOK_CHAPTER_START_WORD_COUNT': false, 'EBOOK_CHAPTER_SWITCH_SHOW_INFO': false, 'EBOOK_SHORTCUT_LONG_PRESS_SCREEN_ON': false,
-			'EBOOK_SHORTCUT_DOUBLE_CLICK_BOOKMARK': false, 'EBOOK_SHORTCUT_TRIPLE_CLICK_BOOKMARK_MANAGER': false
+			'EBOOK_SHORTCUT_DOUBLE_CLICK_BOOKMARK': false, 'EBOOK_SHORTCUT_TRIPLE_CLICK_BOOKMARK_MANAGER': false,
+			'EBOOK_REST_INTERVAL_ENABLED': false, 'EBOOK_REST_INTERVAL': 30, 'EBOOK_MAX_DURATION_ENABLED': false, 'EBOOK_MAX_DURATION': 60
 		};
 		const mapping = {
 			'EBOOK_TXTSZPAGE': 'txtSizePage', 'EBOOK_VERTICAL_MARGIN': 'verticalMargin', 'EBOOK_FONT': 'fontSize', 'EBOOK_OPACITY': 'opacity',
@@ -287,7 +298,8 @@ export default {
 			'EBOOK_NOSTALGIC_PAGE_TURN_MODE': 'nostalgicPageTurnMode', 'EBOOK_BOLD_ENABLED': 'boldEnabled', 'EBOOK_CHAPTER_START_EMPTY_LINES': 'chapterStartEmptyLines',
 			'EBOOK_CHAPTER_START_NUMBER': 'chapterStartNumber', 'EBOOK_CHAPTER_START_NAME': 'chapterStartName', 'EBOOK_CHAPTER_START_WORD_COUNT': 'chapterStartWordCount',
 			'EBOOK_CHAPTER_SWITCH_SHOW_INFO': 'chapterSwitchShowInfo', 'EBOOK_SHORTCUT_LONG_PRESS_SCREEN_ON': 'shortcutLongPressScreenOn',
-			'EBOOK_SHORTCUT_DOUBLE_CLICK_BOOKMARK': 'shortcutDoubleClickBookmark', 'EBOOK_SHORTCUT_TRIPLE_CLICK_BOOKMARK_MANAGER': 'shortcutTripleClickBookmarkManager'
+			'EBOOK_SHORTCUT_DOUBLE_CLICK_BOOKMARK': 'shortcutDoubleClickBookmark', 'EBOOK_SHORTCUT_TRIPLE_CLICK_BOOKMARK_MANAGER': 'shortcutTripleClickBookmarkManager',
+			'EBOOK_REST_INTERVAL_ENABLED': 'restIntervalEnabled', 'EBOOK_REST_INTERVAL': 'restIntervalValue', 'EBOOK_MAX_DURATION_ENABLED': 'maxDurationEnabled', 'EBOOK_MAX_DURATION': 'maxDurationValue'
 		};
 
 		const promises = keys.map(key => new Promise(resolve => {
@@ -321,6 +333,25 @@ export default {
 		if (this.saveMode === 'periodic' && this.saveIntervalValue > 0) {
 			this.periodicSaveTimer = setInterval(() => { this._performSave(); }, this.saveIntervalValue * 1000);
 		}
+	},
+	_startRestTimers() {
+		this._clearRestTimers();
+		this.sessionStartTime = Date.now();
+		if (this.restIntervalEnabled && this.restIntervalValue > 0) {
+			this.restIntervalTimer = setInterval(() => {
+				const elapsed = Math.floor((Date.now() - this.sessionStartTime) / 60000);
+				prompt.showToast({ message: `已阅读 ${elapsed} 分钟，休息一下吧` });
+			}, this.restIntervalValue * 60 * 1000);
+		}
+		if (this.maxDurationEnabled && this.maxDurationValue > 0) {
+			this.maxDurationTimer = setTimeout(() => {
+				prompt.showToast({ message: `已连续阅读 ${this.maxDurationValue} 分钟，该休息了` });
+			}, this.maxDurationValue * 60 * 1000);
+		}
+	},
+	_clearRestTimers() {
+		if (this.restIntervalTimer) { clearInterval(this.restIntervalTimer); this.restIntervalTimer = null; }
+		if (this.maxDurationTimer) { clearTimeout(this.maxDurationTimer); this.maxDurationTimer = null; }
 	},
 	updateContentHeight() { setTimeout(() => { this.$element("contentContainer").getBoundingClientRect({ success: (rect) => { this.contentHeight = rect.height; } }); }, 50); },
 	updateScrollHeight() { this.scrollHeight = 514 - this.verticalMargin * 2; this.pageHeigh = Math.floor(this.scrollHeight / this.lineHeight) * this.lineHeight; },
@@ -1036,15 +1067,18 @@ export default {
 		if (this.saveDataTimeout) clearTimeout(this.saveDataTimeout);
 		if (this.readingTimeSaveTimer) { clearInterval(this.readingTimeSaveTimer); this.readingTimeSaveTimer = null; }
 		if (this.autoInterval) clearInterval(this.autoInterval);
+		this._clearRestTimers();
 		await this._performSave();
 		if (this.name) try { await readingTimeStorage.recordReadingEnd(this.name); } catch (e) { }
 		brightness.setKeepScreenOn({ keepScreenOn: false });
 	},
 	async onDestroy() {
+		this._unregisterExitHandler();
 		if (this.saveDataTimeout) clearTimeout(this.saveDataTimeout);
 		if (this.readingTimeSaveTimer) clearInterval(this.readingTimeSaveTimer);
 		if (this.timer) clearInterval(this.timer);
 		if (this.autoInterval) clearInterval(this.autoInterval);
+		this._clearRestTimers();
 		await this._performSave();
 		if (this.name) try { await readingTimeStorage.recordReadingEnd(this.name); } catch (e) { }
 		brightness.setKeepScreenOn({ keepScreenOn: false });
@@ -1085,6 +1119,7 @@ export default {
 		if (this.periodicSaveTimer) clearInterval(this.periodicSaveTimer);
 		if (this.readingTimeSaveTimer) clearInterval(this.readingTimeSaveTimer);
 		if (this.autoInterval) clearInterval(this.autoInterval);
+		this._clearRestTimers();
 		await this._performSave();
 		if (this.name) try { await readingTimeStorage.recordReadingEnd(this.name); } catch (e) { }
 		return false;
@@ -1093,6 +1128,7 @@ export default {
 		if (this.saveDataTimeout) clearTimeout(this.saveDataTimeout);
 		if (this.readingTimeSaveTimer) clearInterval(this.readingTimeSaveTimer);
 		if (this.autoInterval) clearInterval(this.autoInterval);
+		this._clearRestTimers();
 		await this._performSave();
 		if (this.name) try { await readingTimeStorage.recordReadingEnd(this.name); } catch (e) { }
 		router.back();
@@ -1107,6 +1143,7 @@ export default {
 		globalThis.readerTxtSizePage = this.txtSizePage;
 		if (this.readingTimeSaveTimer) clearInterval(this.readingTimeSaveTimer);
 		this.readingTimeSaveTimer = null;
+		this._clearRestTimers();
 		router.push({ uri: '/pages/detailsetting', params: { name: this.name } });
 		setTimeout(() => { this.isProcessingClick = false; }, 500);
 	},
@@ -1114,9 +1151,21 @@ export default {
 		if (this.saveDataTimeout) clearTimeout(this.saveDataTimeout);
 		if (this.readingTimeSaveTimer) clearInterval(this.readingTimeSaveTimer);
 		if (this.autoInterval) clearInterval(this.autoInterval);
+		this._clearRestTimers();
 		await this._performSave();
 		if (this.name) try { await readingTimeStorage.recordReadingEnd(this.name); } catch (e) { }
 		app.terminate();
+	},
+	// 注册“整体退出”处理器：定时关闭到点时与“老师屏”走同一条退出路径
+	_registerExitHandler() {
+		globalThis.__exitAppSafely = () => { this.exitAppForTeacherScreen(); };
+		globalThis.__exitAppSafelyOwner = this;
+	},
+	_unregisterExitHandler() {
+		if (globalThis.__exitAppSafelyOwner === this) {
+			globalThis.__exitAppSafely = null;
+			globalThis.__exitAppSafelyOwner = null;
+		}
 	},
 	loadNostalgicChapter(offsetInChapter) {
 		if (!this.nostalgicFullContent) {

@@ -183,6 +183,18 @@
       },
       "pages/quickSettings": {
         "component": "quickSettings"
+      },
+      "pages/restReminder": {
+        "component": "restReminder"
+      },
+      "pages/restIntervalSetting": {
+        "component": "restIntervalSetting"
+      },
+      "pages/maxDurationSetting": {
+        "component": "maxDurationSetting"
+      },
+      "pages/scheduledShutdown": {
+        "component": "scheduledShutdown"
       }
     }
   },

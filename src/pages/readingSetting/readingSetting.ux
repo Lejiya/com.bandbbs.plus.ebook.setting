@@ -2,6 +2,20 @@
 	<div class="page" style="flex-direction: column;">
   
 	<list class="list">
+		  <list-item class="item" @click="routerTo('restReminder')" type="item">
+			  <div class="item-content">
+			  	<text class="itemtext" static>休息提醒</text>
+			  	<text class="itemtext2" static>开启定时休息</text>
+			  </div>
+			  <img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
+		  <list-item class="item" @click="routerTo('scheduledShutdown')" type="item">
+			  <div class="item-content">
+			  	<text class="itemtext" static>定时关闭</text>
+			  	<text class="itemtext2">{{shutdownSummary}}</text>
+			  </div>
+			  <img src="/common/images/enter.png" style="width:32px;height: 32px;" static/>
+		  </list-item>
 		  <list-item class="item" @click="routerTo('opacity')" type="item">
 			  <div class="item-content">
 				  <text class="itemtext" static>字体亮度</text>
@@ -131,6 +145,7 @@
   import router from '@system.router'
   import app from '@system.app'
   import storage from '../../utils/storage.js'
+  import scheduledShutdown from '../../utils/scheduledShutdown.js'
   
   
   export default {
@@ -140,7 +155,8 @@
 	  chapterSwitchStyle: 'button',
     timeFormat: '24h',
 	  readMode: 'scroll',
-	  boldEnabled: true
+	  boldEnabled: true,
+	  shutdownSummary: '到点自动退出软件'
 	},
 	protected: {
 	  cPath: '',
@@ -208,6 +224,26 @@
 			}
 		}, fail: () => {
 			this.boldEnabled = true;
+		}});
+		this.loadShutdownSummary();
+	},
+	loadShutdownSummary() {
+		storage.get({ key: 'EBOOK_SCHEDULED_SHUTDOWN_ENABLED', success: (data) => {
+			const shutdownEnabled = data === 'true' || data === true;
+			if (!shutdownEnabled) {
+				this.shutdownSummary = '到点自动退出软件';
+				return;
+			}
+			storage.get({ key: 'EBOOK_SCHEDULED_SHUTDOWN_TIME', success: (timeData) => {
+				const parts = scheduledShutdown.parseTime(timeData);
+				this.shutdownSummary = parts
+					? `每天 ${scheduledShutdown.formatTime(parts.hour, parts.minute)} 自动退出`
+					: '到点自动退出软件';
+			}, fail: () => {
+				this.shutdownSummary = '到点自动退出软件';
+			}});
+		}, fail: () => {
+			this.shutdownSummary = '到点自动退出软件';
 		}});
 	},
 	onDestroy(){

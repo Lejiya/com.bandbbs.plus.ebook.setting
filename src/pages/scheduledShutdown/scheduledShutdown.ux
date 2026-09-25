@@ -1,0 +1,372 @@
+<template>
+	<div class="page" style="flex-direction: column">
+
+		<div class="toggle-row" @click="toggleEnabled">
+			<text class="toggle-title" static>定时关闭</text>
+			<div class="toggle-right">
+				<text class="toggle-status">{{statusText}}</text>
+				<img src="{{enabled ? '/common/images/Switch_ON.png' : '/common/images/Switch_OFF.png'}}" style="width:32px;height: 24px;"/>
+			</div>
+		</div>
+
+		<div class="time-row">
+			<text class="time-part {{activeField === 'hour' ? 'time-active' : ''}}" @click="selectField('hour')">{{hourDisplay}}</text>
+			<text class="time-colon" static>:</text>
+			<text class="time-part {{activeField === 'minute' ? 'time-active' : ''}}" @click="selectField('minute')">{{minuteDisplay}}</text>
+		</div>
+
+		<text class="hint">{{hintText}}</text>
+
+		<div class="keypad">
+			<div class="key-row">
+				<div class="key" @click="inputDigit(1)"><text class="key-text" static>1</text></div>
+				<div class="key" @click="inputDigit(2)"><text class="key-text" static>2</text></div>
+				<div class="key" @click="inputDigit(3)"><text class="key-text" static>3</text></div>
+			</div>
+			<div class="key-row">
+				<div class="key" @click="inputDigit(4)"><text class="key-text" static>4</text></div>
+				<div class="key" @click="inputDigit(5)"><text class="key-text" static>5</text></div>
+				<div class="key" @click="inputDigit(6)"><text class="key-text" static>6</text></div>
+			</div>
+			<div class="key-row">
+				<div class="key" @click="inputDigit(7)"><text class="key-text" static>7</text></div>
+				<div class="key" @click="inputDigit(8)"><text class="key-text" static>8</text></div>
+				<div class="key" @click="inputDigit(9)"><text class="key-text" static>9</text></div>
+			</div>
+			<div class="key-row">
+				<div class="key key-func" @click="clearInput"><text class="key-func-text" static>清空</text></div>
+				<div class="key" @click="inputDigit(0)"><text class="key-text" static>0</text></div>
+				<div class="key key-del" @click="backspace"><text class="key-del-text" static>←</text></div>
+			</div>
+		</div>
+
+		<img static src="/common/images/hd.png" style="position: absolute;left: 0px;top: 0px;width: 212px;height: 82px;" />
+		<text style="position: absolute;top: 16px;width: 212px;line-height: 32px;font-weight:bold;font-size:18px;color:rgba(255,255,255,0.6);text-align:center;">
+		  {{nowTime}}
+		</text>
+		<text static style="position: absolute;top: 36px;width: 212px;line-height: 42px;font-weight:bold;font-size:26px;color:white;text-align:center;">
+			定时关闭
+		</text>
+	</div>
+</template>
+
+<script>
+import router from '@system.router';
+import prompt from '@system.prompt';
+import storage from '../../utils/storage.js';
+import scheduledShutdown from '../../utils/scheduledShutdown.js';
+
+const ENABLED_KEY = 'EBOOK_SCHEDULED_SHUTDOWN_ENABLED';
+const TIME_KEY = 'EBOOK_SCHEDULED_SHUTDOWN_TIME';
+
+export default {
+	private: {
+		enabled: false,
+		hour: 23,
+		minute: 0,
+		// 当前正在输入 'hour' / 'minute'
+		activeField: 'hour',
+		// 正在输入但还没成两位的数字，空串表示未开始输入
+		hourBuffer: '',
+		minuteBuffer: '',
+		hourDisplay: '23',
+		minuteDisplay: '00',
+		timeText: '23:00',
+		statusText: '已关闭',
+		hintText: '开启后每天 23:00 自动退出',
+		nowTime: "00:00",
+		timer: null
+	},
+	pad2(value) {
+		return value < 10 ? '0' + value : '' + value;
+	},
+	updateTime() {
+		const date = new Date();
+		let hours = date.getHours();
+		let minutes = date.getMinutes();
+		hours = hours < 10 ? '0' + hours : hours;
+		minutes = minutes < 10 ? '0' + minutes : minutes;
+		this.nowTime = `${hours}:${minutes}`;
+	},
+	// 输入中的那一位显示成“2_”，其余显示已保存的值
+	refreshDisplay() {
+		this.hourDisplay = this.hourBuffer ? this.hourBuffer + '_' : this.pad2(this.hour);
+		this.minuteDisplay = this.minuteBuffer ? this.minuteBuffer + '_' : this.pad2(this.minute);
+	},
+	refreshTexts() {
+		this.timeText = scheduledShutdown.formatTime(this.hour, this.minute);
+		this.statusText = this.enabled ? '已开启' : '已关闭';
+		this.hintText = this.enabled
+			? `下次关闭：${scheduledShutdown.describeNextRun(this.hour, this.minute)}`
+			: `开启后每天 ${this.timeText} 自动退出`;
+		this.refreshDisplay();
+	},
+	loadSettings() {
+		storage.get({
+			key: ENABLED_KEY,
+			success: (data) => {
+				this.enabled = data === 'true' || data === true;
+				storage.get({
+					key: TIME_KEY,
+					success: (timeData) => {
+						const parts = scheduledShutdown.parseTime(timeData);
+						if (parts) {
+							this.hour = parts.hour;
+							this.minute = parts.minute;
+						}
+						this.refreshTexts();
+					},
+					fail: () => { this.refreshTexts(); }
+				});
+			},
+			fail: () => { this.refreshTexts(); }
+		});
+	},
+	saveEnabled() {
+		storage.set({
+			key: ENABLED_KEY,
+			value: this.enabled.toString(),
+			complete: () => { this.notifyScheduler(); }
+		});
+	},
+	saveTime() {
+		storage.set({
+			key: TIME_KEY,
+			value: scheduledShutdown.formatTime(this.hour, this.minute),
+			complete: () => { this.notifyScheduler(); }
+		});
+	},
+	// 通知全局定时器重新计算下一次触发时间
+	notifyScheduler() {
+		if (typeof globalThis.rearmScheduledShutdown === 'function') {
+			globalThis.rearmScheduledShutdown();
+		}
+	},
+	onInit() {
+		this.updateTime();
+		// 每秒刷新，跨零点后“今天/明天”提示仍然准确
+		this.timer = setInterval(() => { this.updateTime(); this.refreshTexts(); }, 1000);
+		this.loadSettings();
+	},
+	onDestroy() {
+		if (this.timer) {
+			clearInterval(this.timer);
+			this.timer = null;
+		}
+	},
+	// 点按显示区切换正在输入的时/分
+	selectField(field) {
+		if (this.activeField === field) return;
+		this.hourBuffer = '';
+		this.minuteBuffer = '';
+		this.activeField = field;
+		this.refreshTexts();
+	},
+	// 键位约束保证不会输入非法时间：小时 0-23、分钟 0-59
+	inputDigit(digit) {
+		if (this.activeField === 'hour') {
+			if (this.hourBuffer === '') {
+				if (digit > 2) {
+					prompt.showToast({ message: '小时范围为 0-23' });
+					return;
+				}
+				this.hourBuffer = '' + digit;
+			} else {
+				const value = parseInt(this.hourBuffer + digit, 10);
+				if (value > 23) {
+					prompt.showToast({ message: '小时范围为 0-23' });
+					return;
+				}
+				this.hour = value;
+				this.hourBuffer = '';
+				this.saveTime();
+				this.activeField = 'minute';
+			}
+		} else {
+			if (this.minuteBuffer === '') {
+				if (digit > 5) {
+					prompt.showToast({ message: '分钟范围为 0-59' });
+					return;
+				}
+				this.minuteBuffer = '' + digit;
+			} else {
+				this.minute = parseInt(this.minuteBuffer + digit, 10);
+				this.minuteBuffer = '';
+				this.saveTime();
+				prompt.showToast({ message: `已设置每天 ${scheduledShutdown.formatTime(this.hour, this.minute)} 自动退出` });
+			}
+		}
+		this.refreshTexts();
+	},
+	backspace() {
+		if (this.activeField === 'minute') {
+			if (this.minuteBuffer) {
+				this.minuteBuffer = '';
+			} else {
+				this.activeField = 'hour';
+			}
+		} else {
+			this.hourBuffer = '';
+		}
+		this.refreshTexts();
+	},
+	// 取消本次输入，回到已保存的时间
+	clearInput() {
+		this.hourBuffer = '';
+		this.minuteBuffer = '';
+		this.activeField = 'hour';
+		this.refreshTexts();
+	},
+	toggleEnabled() {
+		this.enabled = !this.enabled;
+		this.refreshTexts();
+		this.saveEnabled();
+		if (this.enabled) {
+			prompt.showToast({ message: `已开启：每天 ${this.timeText} 自动退出` });
+		} else {
+			prompt.showToast({ message: '已关闭定时关闭' });
+		}
+	},
+	back() { router.back(); }
+};
+</script>
+
+<style>
+.page {
+	width: 212px;
+	height: 520px;
+	background-color: #000000;
+}
+
+.toggle-row {
+	position: absolute;
+	left: 4px;
+	top: 86px;
+	width: 204px;
+	height: 46px;
+	border-radius: 23px;
+	background-color: #262626;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 14px;
+}
+
+.toggle-title {
+	font-size: 18px;
+	font-weight: bold;
+	color: white;
+}
+
+.toggle-right {
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.toggle-status {
+	font-size: 15px;
+	font-weight: bold;
+	color: rgba(255, 255, 255, 0.6);
+	margin-right: 8px;
+}
+
+.time-row {
+	position: absolute;
+	top: 140px;
+	width: 212px;
+	height: 56px;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
+
+.time-part {
+	width: 72px;
+	height: 56px;
+	line-height: 56px;
+	text-align: center;
+	font-size: 34px;
+	font-weight: bold;
+	color: #FFFFFF;
+	background-color: #262626;
+	border-radius: 16px;
+}
+
+.time-active {
+	background-color: #0D6EFF;
+}
+
+.time-colon {
+	width: 22px;
+	height: 56px;
+	line-height: 56px;
+	text-align: center;
+	font-size: 34px;
+	font-weight: bold;
+	color: #FFFFFF;
+}
+
+.hint {
+	position: absolute;
+	top: 200px;
+	width: 212px;
+	height: 26px;
+	line-height: 26px;
+	font-size: 15px;
+	font-weight: bold;
+	color: rgba(255, 255, 255, 0.6);
+	text-align: center;
+}
+
+.keypad {
+	position: absolute;
+	top: 236px;
+	width: 212px;
+	flex-direction: column;
+	align-items: center;
+}
+
+.key-row {
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 12px;
+}
+
+.key {
+	width: 52px;
+	height: 52px;
+	border-radius: 26px;
+	background-color: #262626;
+	justify-content: center;
+	align-items: center;
+	margin: 0 7px;
+}
+
+.key-text {
+	font-size: 24px;
+	font-weight: bold;
+	color: #FFFFFF;
+}
+
+.key-func {
+	background-color: #0D6EFF;
+}
+
+.key-func-text {
+	font-size: 14px;
+	font-weight: bold;
+	color: #FFFFFF;
+}
+
+.key-del {
+	background-color: #B91C1C;
+}
+
+.key-del-text {
+	font-size: 22px;
+	font-weight: bold;
+	color: #FFFFFF;
+}
+</style>

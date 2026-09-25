@@ -9,3 +9,6 @@ quickapp.config.js
 .DS_Store
 output.py
 output.txt
+/backup
+/.claude
+/.vscode

@@ -5,6 +5,7 @@ import router from '@system.router'
 import brightness from '@system.brightness'
 import storage from './utils/storage.js'
 import file from '@system.file'
+import scheduledShutdown from './utils/scheduledShutdown.js'
 globalThis.conn = new interconn();
 globalThis.conn.setHandshakeListener(() => {
   router.push({uri: 'pages/push'})
@@ -20,8 +21,12 @@ export default {
                 });
             }
         });
+        // 启动定时关闭检查（到点后与“老师屏”一致：保存进度并整体退出）
+        scheduledShutdown.start();
     },
     onShow() {
+        // 回到前台时重新计算下一次触发时间，避免恢复时立即退出
+        scheduledShutdown.resume();
         // 检查是否已设置密码
         storage.get({
             key: 'EBOOK_PASSWORD',
